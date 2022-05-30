@@ -61,8 +61,9 @@ class MyHomePage extends StatelessWidget {
             const DrawerHeader(
               decoration: BoxDecoration(
                 color: Colors.amber,
+                borderRadius: BorderRadius.all(Radius.circular(10.0)),
               ),
-              child: Text('Drawer Header'),
+              child: Text('Menu', textAlign: TextAlign.center),
             ),
             ListTile(
               title: const Text('Item 1'),
