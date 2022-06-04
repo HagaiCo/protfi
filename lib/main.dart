@@ -1,6 +1,13 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'dart:async';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
-void main() => runApp(const MyApp());
+void main(){
+  HttpOverrides.global = new MyHttpOverrides();
+  runApp(const MyApp());
+}
 
 class MyApp extends StatelessWidget {
   const MyApp({key});
@@ -13,6 +20,20 @@ class MyApp extends StatelessWidget {
       title: appTitle,
       home: MyHomePage(title: appTitle),
     );
+  }
+}
+
+Future<Stock> getDailyOpenClose() async {
+  final response = await http.get(Uri.parse('https://localhost:7104/api/stock/GetDailyOpenClose/GOOGL'));
+  if (response.statusCode == 200) {
+    // If the server did return a 200 OK response,
+    // then parse the JSON.
+    var result = Stock.fromJson(jsonDecode(response.body));
+    return result;
+  } else {
+    // If the server did not return a 200 OK response,
+    // then throw an exception.
+    throw Exception('Failed to load stock');
   }
 }
 
@@ -29,6 +50,7 @@ class MyHomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    var test = getDailyOpenClose().then((news) { print(news);});
     return Scaffold(
       appBar: AppBar(title: Text(title), backgroundColor: Colors.amber),
       body: DataTable(
@@ -45,7 +67,7 @@ class MyHomePage extends StatelessWidget {
           DataCell(Text(element["ID"] ?? "")), //Extracting from Map element the value
           DataCell(Text(element["Name"] ?? "")),
           DataCell(Text(element["Location"] ?? "")),
-          DataCell(Text(element!["Action"] ?? "")),
+          DataCell(Text(element["Action"] ?? "")),
   ],
   )),
   ).toList(),
@@ -67,6 +89,8 @@ class MyHomePage extends StatelessWidget {
             ),
             ListTile(
               title: const Text('Item 1'),
+              textColor: Colors.red,
+              hoverColor: Colors.purple,
               onTap: () {
                 // Update the state of the app
                 // ...
@@ -87,5 +111,39 @@ class MyHomePage extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class Stock {
+  final String symbol;
+  final double open;
+  final double close;
+  final double high;
+  final double low;
+
+  const Stock({
+    required this.symbol,
+    required this.open,
+    required this.close,
+    required this.high,
+    required this.low,
+  });
+
+  factory Stock.fromJson(Map<String, dynamic> json) {
+    return Stock(
+      symbol: json['symbol'],
+      open: json['open'],
+      close: json['close'],
+      high: json['high'],
+      low: json['low'],
+    );
+  }
+}
+
+class MyHttpOverrides extends HttpOverrides{
+  @override
+  HttpClient createHttpClient(SecurityContext? context){
+    return super.createHttpClient(context)
+      ..badCertificateCallback = (X509Certificate cert, String host, int port)=> true;
   }
 }
